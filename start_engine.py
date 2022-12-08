@@ -8,15 +8,22 @@ import mechanics
 import svn
 import pprint
 
+#TODO How can we reuse the function mapAuthors from 2 different scripts with 2 different codes
+
 from _gearbox import mapAuthors
 from mechanics import mapAuthors
 
 mapAuthors()
 
 if __name__ == '__main__':
+
+    # TODO - Check if we use this g_vars OR globVarsS
     g_vars.initialize()
     print("SVN - After first run of init: ", g_vars.path_svn_base )
     print("Travellers - After first run of init: ", g_vars.path_travellers )
+
+    _gearbox.initializeVars()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--repo', required=True)
     parser.add_argument('-x', '--reset',        action='store_true')
@@ -30,7 +37,6 @@ if __name__ == '__main__':
     parser.add_argument('--analyze',            action='store_true')
     parser.add_argument('--keep-ruleset',       action='store_true')
     parser.add_argument('--trigger-initial',    action='store_true')
-    #parser.add_argument('--env',                action='store_true')
     parser.add_argument('--env', choices=['test', 'prod'])
     parser.add_argument('--gh-remote-name',     action='store_true')
 
@@ -44,15 +50,13 @@ if __name__ == '__main__':
         print("Running in :", _gearbox.globVarsS.enviroment, "enviroment")
 
     _gearbox.readTheConfig(_gearbox.globVarsS.enviroment)
-    #print("SVN - After reading the config:\t\t", g_vars.path_svn_base )
-    #print("Travellers - After reading the config:\t", g_vars.path_travellers )
 
-    print("\n The Script-Name & Arguments: \n")
-    print(__name__)
-    print(args)
+    #print("\n The Script-Name & Arguments: \n")
+    #print(__name__)
+    #print(args)
 
-    print("SVN-Base: ", _gearbox.globVarsS.path_svn_base)
-    print("Tavellers: ", _gearbox.globVarsS.path_travellers)
+    #print("SVN-Base: ", _gearbox.globVarsS.path_svn_base)
+    #print("Tavellers: ", _gearbox.globVarsS.path_travellers)
 
     if args.repo == "":
         print(f'No given repo name for argument -r')
@@ -60,6 +64,6 @@ if __name__ == '__main__':
         print(f'The repo ', args.repo, 'exists')
         _gearbox.globVarsS.reponame = args.repo
 
-    _gearbox.globVarsS.pttr = _gearbox.globVarsS.path_travellers + "/" + _gearbox.globVarsS.reponame
+    _gearbox.setGlobalVars()
 
-    print ("Path pttr:", _gearbox.globVarsS.pttr)
+    _gearbox.getAuthors()

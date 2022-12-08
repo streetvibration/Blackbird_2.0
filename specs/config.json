@@ -1,7 +1,7 @@
 {
         "test":[
             {
-                "path_svn_base": "/usd/as97282b/data/links",
+                "path_svn_base": "/Users/joe2/DockerForMac/svn-to-git/SVN/repos",
                 "path_travellers": "/usd/as97282b/data/BB/TEST/travellers",
                 "path_svn_all_fast_export": "/usd/as97282a/home/harcvs/svn2git-fi/bin",
                 "git_remote": "git@github-entwicklung.intern",
@@ -12,7 +12,7 @@
         ],
         "prod":[
             {
-                "path_svn_base": "/usd/as97282b/data/links",
+                "path_svn_base": "/Users/joe2/DockerForMac/svn-to-git/SVN/repos",
                 "path_travellers": "/usd/as97282b/data/BB/PROD/travellers",
                 "path_svn_all_fast_export": "/usd/as97282a/home/harcvs/svn2git-fi/bin",
                 "git_remote": "git@github-entwicklung.intern",
