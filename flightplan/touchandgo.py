@@ -4,11 +4,13 @@ import os
 import sys
 import time
 import subprocess
-import _gearbox
+import _gearbox as gb
 
 
 
 def main():
+
+    gv = gb.globVarsS
 
     time.sleep(3)
 
@@ -17,7 +19,7 @@ def main():
     print(__name__)
 
     #print("REPO: ", repo)
-    print("RRR: ", _gearbox.globVarsS.reponame)
+    print("RRR witj gv: ", gv.reponame)
 
     # Print the current working directory
     print("Current working directory: {0}".format(cwd))
@@ -35,13 +37,13 @@ def main():
     #os.chdir('./flightplan')
 
     logging.error("This is an error")
-    _gearbox.globVarsS.touchandgo_error.append("\tERROR - This is an error")
+    gv.touchandgo_error.append("\tERROR - This is an error")
     #_gearbox.globVarsS.touchandgo_error.append("\tERROR - This is another error")
 
     # Print the current working directory
     print("Current working directory: {0}".format(os.getcwd()))
 
-    path = 'flightplan'
+    path = ''
     try:
         os.chdir(path)
         print("Current working directory: {0}".format(os.getcwd()))

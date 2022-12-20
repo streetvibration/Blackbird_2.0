@@ -22,25 +22,47 @@ This script controls the migration from a SVN-Repo to Git
 
 import logging
 import argparse
-# import _gearbox as gb
-import _gearbox
 import sys
 import os
-from datetime import datetime
+from datetime \
+    import datetime
 
+# Shorten the access to functions instead of _grabox.function() -> gb.function()
+import _gearbox as gb
+
+# shorten all the access to the vars imstaead of _gearbox.globVarsS -> gv
+from _gearbox import \
+    setGlobalVars as gv
+
+# Import the blackbird modules which are doing the work ;) from the 'flightplan' folder
+from flightplan \
+    import cruisealtitude, touchandgo, taxiing
+
+
+gv = gb.globVarsS
+
+#gv.FILE_AUTHORS = "TTTTTT"
+print("Initial Value: ", gv.FILE_AUTHORS)
 # importing all the blackbird modules
-import touchandgo
+print("TESTING THE IMPORT FROM THE SUBFOLFER")
+cruisealtitude.main()
+print("After changed in cruisealtitude: ", gv.FILE_AUTHORS)
+taxiing.main()
+
+print("After changed in taxiing: ", gv.FILE_AUTHORS)
+
+
 
 # Benchmarking the overall run
 scriptStartTime = datetime.now()
 
 # See all the logging level-names
-_gearbox.getLevelNames()
+gb.getLevelNames()
 
 # Initiate the logging procesdure
 script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
 
-if (not _gearbox.setup_logging(console_log_output="stdout", console_log_level="info", console_log_color=True,
+if (not gb.setup_logging(console_log_output="stdout", console_log_level="info", console_log_color=True,
                                logfile_file=script_name + ".log", logfile_log_level="debug", logfile_log_color=False,
                                logfile_date='%Y-%m-%d %H:%M',
                                log_line_template="%(color_on)s %(asctime)s [%(filename)s:%(lineno)d] - %(levelname)s  %(message)s%(color_off)s")):
@@ -72,28 +94,28 @@ if __name__ == '__main__':
         sys.exit()
 
     # Sdet the given reponame for further checks/proceeding
-    _gearbox.globVarsS.reponame = args.repo
+    gb.globVarsS.reponame = args.repo
 
     # See if we have a given Envirinment - default "test"
     if not args.env:
-        _gearbox.globVarsS.enviroment = "test"
+        gv.enviroment = "test"
         logging.warning("No enviromet given- using 'test' as default")
     else:
-        _gearbox.globVarsS.enviroment = args.env
-        logging.info("Running in :", _gearbox.globVarsS.enviroment, "enviroment")
+        gv.enviroment = args.env
+        logging.info("Running in :", gv.enviroment, "enviroment")
 
     # Read the config file - Exiting the script when the file does not exist
-    _gearbox.readTheConfig(_gearbox.globVarsS.enviroment)
+    gb.readTheConfig(gb.globVarsS.enviroment)
 
     # Checking/creating the travellers folder-structure
     # _gearbox.createFMigStructure()
 
     # Setting the vars after s successful read of the config file
-    _gearbox.setGlobalVars()
+    gb.setGlobalVars()
 
     # Check if the given SVN-Reponame is valid (existing folder)
     try:
-        _gearbox.checkIfSVN_RepoExists(_gearbox.globVarsS.psvn_REPO)
+        gb.checkIfSVN_RepoExists(gv.psvn_REPO)
     except Exception as ex:
         logging.exception('Caught an error')
         sys.exit()
@@ -106,30 +128,30 @@ if __name__ == '__main__':
         sTime = datetime.now()
         touchandgo.main()
         eTime = datetime.now()
-        a, b = _gearbox.calcRuntime(sTime, eTime)
+        a, b = gb.calcRuntime(sTime, eTime)
 
-        if _gearbox.globVarsS.touchandgo_error:
-            for i in _gearbox.globVarsS.touchandgo_error:
-                _gearbox.globVarsS.touchandgo_list.append(i)
+        if gv.touchandgo_error:
+            for i in gv.touchandgo_error:
+                gv.touchandgo_list.append(i)
         else:
-            _gearbox.globVarsS.touchandgo_list.append("\tNo Error(s)")
+            gv.touchandgo_list.append("\tNo Error(s)")
 
-        _gearbox.globVarsS.touchandgo_list.append("Runtime: " + a + " " + b + "\n")
+        gv.touchandgo_list.append("Runtime: " + a + " " + b + "\n")
 
         logging.info("Runtime: " + a + " " + b)
     else:
         logging.info("Resetting skipped")
-        _gearbox.globVarsS.touchandgo_list.append("skipped")
+        gv.touchandgo_list.append("skipped")
 
     # Benchmarking the overall run
     scriptEndTime = datetime.now()
-    a, b = _gearbox.calcRuntime(scriptStartTime, scriptEndTime)
+    a, b = gb.calcRuntime(scriptStartTime, scriptEndTime)
     totalRuntime = "\nTotal migratrion runtime: " + a + " " + b + "\n"
 
     # Printing / writing the runtimes of all scripts
     # TODO change the open path to "globVarsS.pttr_MIGRATION_LOG" after we have all folders & file defined
     with open("migration.log", "w+") as f:
-        for key, value in _gearbox.globVarsS.run_results.items():
+        for key, value in gv.run_results.items():
             for i in value:
                 print(i)
                 f.write(f"{i}\n")
@@ -138,4 +160,4 @@ if __name__ == '__main__':
 
     print("\nTEST OVERRIDE A FUNCTION - GEARBOX/MECHANICS")
     cf = "mapAuthors"
-    _gearbox.overrideFunction(cf)
+    gb.overrideFunction(cf)
