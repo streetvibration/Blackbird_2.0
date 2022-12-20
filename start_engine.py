@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 """
 This script controls the migration from a SVN-Repo to Git
@@ -22,20 +22,17 @@ This script controls the migration from a SVN-Repo to Git
 
 import logging
 import argparse
-import g_vars
 # import _gearbox as gb
 import _gearbox
-import mechanics
-import svn
-import pprint
 import sys
 import os
-import subprocess
 from datetime import datetime
 
-#TODO How can we reuse the function mapAuthors from 2 different scripts with 2 different codes
+# importing all the blackbird modules
+import touchandgo
 
-from _gearbox import mapAuthors
+# Benchmarking the overall run
+scriptStartTime = datetime.now()
 
 # See all the logging level-names
 _gearbox.getLevelNames()
@@ -46,19 +43,13 @@ script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
 if (not _gearbox.setup_logging(console_log_output="stdout", console_log_level="info", console_log_color=True,
                                logfile_file=script_name + ".log", logfile_log_level="debug", logfile_log_color=False,
                                logfile_date='%Y-%m-%d %H:%M',
-                               #log_line_template="%(color_on)s[%(created)d]  [%(module)s] %(lineno)d [%(threadName)s] [%(levelname)-8s] %(message)s%(color_off)s")):
                                log_line_template="%(color_on)s %(asctime)s [%(filename)s:%(lineno)d] - %(levelname)s  %(message)s%(color_off)s")):
     print("Failed to setup logging, aborting.")
 
-mapAuthors()
-
-
 if __name__ == '__main__':
 
-    _gearbox.initializeVars()
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('-r', '--repo', required=True)
+    parser.add_argument('-r', '--repo',         required=True)
     parser.add_argument('-x', '--reset',        action='store_true')
     parser.add_argument('-i', '--info',         action='store_true')
     parser.add_argument('-e', '--export',       action='store_true')
@@ -70,7 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--analyze',            action='store_true')
     parser.add_argument('--keep-ruleset',       action='store_true')
     parser.add_argument('--trigger-initial',    action='store_true')
-    parser.add_argument('--env', choices=['test', 'prod'])
+    parser.add_argument('--env',                choices=['test', 'prod'])
     parser.add_argument('--gh-remote-name',     action='store_true')
 
     args = parser.parse_args()
@@ -110,13 +101,41 @@ if __name__ == '__main__':
     # Check if we have a given SVN-Repository
     if args.reset:
         logging.info("Resetting former migration data..")
+
         # start time and end time
         sTime = datetime.now()
-        subprocess.call('python3 ./flightplan/touchandgo.py', shell=True)
+        touchandgo.main()
         eTime = datetime.now()
         a, b = _gearbox.calcRuntime(sTime, eTime)
-        print("Return time aus Calc: " + a + " " + b)
+
+        if _gearbox.globVarsS.touchandgo_error:
+            for i in _gearbox.globVarsS.touchandgo_error:
+                _gearbox.globVarsS.touchandgo_list.append(i)
+        else:
+            _gearbox.globVarsS.touchandgo_list.append("\tNo Error(s)")
+
+        _gearbox.globVarsS.touchandgo_list.append("Runtime: " + a + " " + b + "\n")
+
+        logging.info("Runtime: " + a + " " + b)
     else:
         logging.info("Resetting skipped")
+        _gearbox.globVarsS.touchandgo_list.append("skipped")
 
-    _gearbox.getAuthors()
+    # Benchmarking the overall run
+    scriptEndTime = datetime.now()
+    a, b = _gearbox.calcRuntime(scriptStartTime, scriptEndTime)
+    totalRuntime = "\nTotal migratrion runtime: " + a + " " + b + "\n"
+
+    # Printing / writing the runtimes of all scripts
+    # TODO change the open path to "globVarsS.pttr_MIGRATION_LOG" after we have all folders & file defined
+    with open("migration.log", "w+") as f:
+        for key, value in _gearbox.globVarsS.run_results.items():
+            for i in value:
+                print(i)
+                f.write(f"{i}\n")
+        print(totalRuntime)
+        f.write(f"{totalRuntime}\n")
+
+    print("\nTEST OVERRIDE A FUNCTION - GEARBOX/MECHANICS")
+    cf = "mapAuthors"
+    _gearbox.overrideFunction(cf)

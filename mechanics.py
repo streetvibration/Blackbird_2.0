@@ -1,4 +1,4 @@
 #!/usr/bin/python
+#def mapAuthors():
+#    print("Map aus MECHANICS")
 
-def mapAuthors():
-    print("Map aus MECHANICS")

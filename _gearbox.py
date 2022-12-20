@@ -1,13 +1,17 @@
 #!/usr/bin/python
 
 import sys
+import inspect
 import os
 import logging
 import subprocess
 import json
 import os.path
+import time
 from logging import getLoggerClass, addLevelName, setLoggerClass, NOTSET
 from datetime import datetime
+import mechanics    # needed for the overrideFunction
+
 
 # TODO - Tried to add a new log-level but something is not working
 # class SucessLogger(getLoggerClass()):
@@ -23,9 +27,24 @@ from datetime import datetime
 #
 # setLoggerClass(SucessLogger)
 
-def calcRuntime(sTime, eTime ):
+def overrideFunction(function):
+
+    logging.info("Required function: " + function)
+
+    try:
+        # Try to get the attributes from a function in 'mechanics.py'
+        mam = getattr(mechanics, function)
+        logging.warning("Default function '" + function + "' overridden by custom code in 'mechanics'")
+        mam()
+
+    except: # The function is not defined in mechanics.py
+        logging.info("Default function '"+ function + "' is proceeded.")
+        mapAuthors()
+
+
+def calcRuntime(sTime, eTime):
     tdelta = eTime - sTime
-    diff_in_minutes = 0
+    #diff_in_minutes = 0
     diff_in_seconds = round(tdelta.total_seconds(), 2)
 
     if diff_in_seconds >= 60:
@@ -45,6 +64,106 @@ def getLevelNames():
         for x in range(1, 101)
         if not logging.getLevelName(x).startswith('Level'))))
 
+
+class globVarsS:
+    # logging.info("Initiate the vars")
+
+    # Basic calling values (arguments)
+    enviroment = ""
+    reponame = ""
+
+    # Vars for the final log of all the scripts
+
+    touchandgo_list     = ["TOUCHANDGO \t(Resetting former data)"]
+    touchandgo_error    = []
+
+    taxiing_list        = ["TAXIING \t(Gathering data from the SVN repo)"]
+    takeoff_list        = ["TAKEOFF \t(Fast exporting the SVN repo)"]
+    initialclimb_list   = ["INITIALCLIMB \t(Cloning the bare repo)"]
+    cruisealtitude_list = ["CRUISEALTITUDE \t(Analyzing the Git repo)"]
+    descent_list        = ["DESCENT \t(Filtering the base repo)"]
+    approach_list       = ["APPROACH \t(Pushing the repo)"]
+    touchdown_list      = ["TOUCHDOWN \t(Flatten out the binaries)"]
+
+    run_results = {
+        'touchandgo'        : touchandgo_list,
+        'taxiing'           : taxiing_list,
+        'initialclimb'      : initialclimb_list,
+        'cruisealtitude'    : cruisealtitude_list,
+        'descent'           : descent_list,
+        'approach'          : approach_list,
+        'touchdown'         : touchdown_list
+    }
+
+# Values from the config file
+    path_svn_base = ""
+    path_travellers = ""
+
+    # File definitions
+    FILE_AUTHORS = "authors.txt"
+
+    # Shortened for PathToTravellerReponame
+    pttr = ""
+    pttr_BOARDINGPASS = ""
+    pttr_AUTHORS = ""
+    psvn_REPO = ""
+
+
+def checkIfSVN_RepoExists(path):
+    assert (os.path.exists(path)), "SVN-Repository not found"
+    logging.info("SVN-Repository at '" + globVarsS.psvn_REPO + "' exists.")
+    # isExisting = os.path.exists(path)
+
+
+def setGlobalVars():
+    globVarsS.psvn_REPO = globVarsS.path_svn_base + "/" + globVarsS.reponame
+    globVarsS.pttr = globVarsS.path_travellers + "/" + globVarsS.reponame
+    globVarsS.pttr_BOARDINGPASS = globVarsS.pttr + "/" + "boardingpass"
+    globVarsS.pttr_AUTHORS = globVarsS.pttr_BOARDINGPASS + "/" + globVarsS.FILE_AUTHORS
+
+
+def mapAuthors():
+    #print("Mapping aus GEARBOX")
+    #logging.info("Map aus GEARBOX")
+    logging.info("Mapping the authors")
+    # Remove former files
+    # [ -e "${PATH_TRAVELLER_REPO_AUTHORS_MAPPED}" ] && rm -f "${PATH_TRAVELLER_REPO_AUTHORS_MAPPED}"
+    # As we do not have any standard mapping we just copy the file
+    # cp ${PATH_TRAVELLER_REPO_AUTHORS} ${PATH_TRAVELLER_REPO_AUTHORS_MAPPED}
+
+
+def getAuthors():
+    svn_filepath = "file://" + globVarsS.psvn_REPO
+    cmd = "svn log -q " + svn_filepath + " | grep '^r' | grep '|' | awk '{print $3}' | sort | uniq"
+    proc = subprocess.Popen([cmd], stdout=subprocess.PIPE, shell=True)
+
+    # TODO change the open path to "globVarsS.pttr_AUTHORS" after we have all folders & file defined
+    with open("authors.txt", "w+") as f:
+        for line in proc.stdout:
+            elem = line.strip().decode()
+            elem = elem + " " + "=" + " " + elem + " <" + elem + "@" + "mycompany.com>\n"
+            f.write(elem)  # add the line to the file
+
+
+def readTheConfig(enviroment):
+    """docstring"""
+    #from pathlib import Path
+    logging.info("Trying to read the Config-File for '" + globVarsS.enviroment + "' enviroment")
+
+    CONFIG_FILE = "specs/config.json"
+
+    if os.path.exists(CONFIG_FILE):
+        logging.info("The config file at path '" + CONFIG_FILE + "' exists")
+    else:
+        sys.exit(f'The config file "{CONFIG_FILE}" does not exist')
+
+    f = open(CONFIG_FILE)
+    data = json.load(f)
+
+    # Set the vars
+
+    globVarsS.path_svn_base = data[enviroment][0]['path_svn_base']
+    globVarsS.path_travellers = data[enviroment][0]['path_travellers']
 
 # Logging formatter supporting colorized output
 class LogFormatter(logging.Formatter):
@@ -131,97 +250,3 @@ def setup_logging(console_log_output, console_log_level, console_log_color, logf
 
     # Success
     return True
-
-
-# logging.info("We are in the Module:")
-
-def initializeVars():
-    global var1
-    var1 = "Initiasl value"
-
-    global var2
-    var2 = False
-
-
-class globVarsS():
-    # logging.info("Initiate the vars")
-
-    # Basic calling values (arguments)
-    enviroment = ""
-    reponame = ""
-
-    # Values from the config file
-    path_svn_base = ""
-    path_travellers = ""
-
-    # File definitions
-    FILE_AUTHORS = "authors.txt"
-
-    # Shortened for PathToTravellerReponame
-    pttr = ""
-    pttr_BOARDINGPASS = ""
-    pttr_AUTHORS = ""
-    psvn_REPO = ""
-
-
-def checkIfSVN_RepoExists(path):
-    assert (os.path.exists(path)), "SVN-Repository not found"
-    logging.info("SVN-Repository at '" + globVarsS.psvn_REPO + "' exists.")
-    #isExisting = os.path.exists(path)
-
-
-def setGlobalVars():
-    globVarsS.psvn_REPO = globVarsS.path_svn_base + "/" + globVarsS.reponame
-    globVarsS.pttr = globVarsS.path_travellers + "/" + globVarsS.reponame
-    globVarsS.pttr_BOARDINGPASS = globVarsS.pttr + "/" + "boardingpass"
-    globVarsS.pttr_AUTHORS = globVarsS.pttr_BOARDINGPASS + "/" + globVarsS.FILE_AUTHORS
-
-
-def mapAuthors():
-    logging.info("Map aus GEARBOX")
-    logging.info("Mapping the authors")
-    # Remove former files
-    # [ -e "${PATH_TRAVELLER_REPO_AUTHORS_MAPPED}" ] && rm -f "${PATH_TRAVELLER_REPO_AUTHORS_MAPPED}"
-    # As we do not have any standard mapping we just copy the file
-    # cp ${PATH_TRAVELLER_REPO_AUTHORS} ${PATH_TRAVELLER_REPO_AUTHORS_MAPPED}
-
-
-def getAuthors():
-    svn_filepath = "file://" + globVarsS.psvn_REPO
-    cmd = "svn log -q " + svn_filepath + " | grep '^r' | grep '|' | awk '{print $3}' | sort | uniq"
-    proc = subprocess.Popen([cmd], stdout=subprocess.PIPE, shell=True)
-
-    # TODO change the open path to "globVarsS.pttr_AUTHORS" after we have all folders & file defined
-    f = open('authors.txt', 'a')  # open the file
-    f.seek(0)  # set the position back to the beginning
-    f.truncate()  # delete the content
-
-    for line in proc.stdout:
-        # print(line.strip().decode())
-        my_elem = line.strip().decode()
-        my_elem = my_elem + " " + "=" + " " + my_elem + " <" + my_elem + "@" + "mycompany.com>\n"
-        f.write(my_elem)  # add the line to the file
-        # print(my_elem)
-
-    f.close()  # close the file
-
-
-def readTheConfig(enviroment):
-    """docstring"""
-    from pathlib import Path
-    logging.info("Trying to read the Config-File for '" + globVarsS.enviroment + "' enviroment")
-
-    CONFIG_FILE = "specs/config.json"
-
-    if os.path.exists(CONFIG_FILE):
-        logging.info("The config file at path '" + CONFIG_FILE + "' exists")
-    else:
-        sys.exit(f'The config file "{CONFIG_FILE}" does not exist')
-
-    f = open(CONFIG_FILE)
-    data = json.load(f)
-
-    # Set the vars
-
-    globVarsS.path_svn_base = data[enviroment][0]['path_svn_base']
-    globVarsS.path_travellers = data[enviroment][0]['path_travellers']
